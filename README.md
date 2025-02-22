@@ -4,7 +4,7 @@ A simple Flappy Bird-style game implemented in Python using Pygame.
 
 ## Description
 
-Flappy Koala is a game where you control a koala, helping it navigate through pipes by flapping. The goal is to survive as long as possible and achieve the highest score.
+Flappy Koala is a game where you control a flying koala, helping it navigate through the trees by flapping. The goal is to survive as long as possible and achieve the highest score.
 
 ## Prerequisites
 
