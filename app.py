@@ -9,29 +9,26 @@ pygame.mixer.init()  # Initialize sound
 
 # Asset loading
 ASSET_DIR = os.path.join(os.path.dirname(__file__), 'assets')
+IMAGES = {}
+SOUNDS = {}
+
 def load_image(name):
+    path = os.path.join(ASSET_DIR, 'images', name)
+    if not os.path.exists(path):
+        return None
     try:
-        return pygame.image.load(os.path.join(ASSET_DIR, 'images', name)).convert_alpha()
-    except (pygame.error, FileNotFoundError):
+        return pygame.image.load(path).convert_alpha()
+    except pygame.error:
         return None
 
 def load_sound(name):
-    try:
-        return pygame.mixer.Sound(os.path.join(ASSET_DIR, 'sounds', name))
-    except (pygame.error, FileNotFoundError):
+    path = os.path.join(ASSET_DIR, 'sounds', name)
+    if not os.path.exists(path):
         return None
-
-# Load assets (will be None if files don't exist)
-IMAGES = {
-    'koala': load_image('koala.png'),
-    'pipe': load_image('pipe.png'),
-    'background': load_image('background.png')
-}
-SOUNDS = {
-    'flap': load_sound('flap.wav'),
-    'score': load_sound('score.wav'),
-    'hit': load_sound('hit.wav')
-}
+    try:
+        return pygame.mixer.Sound(path)
+    except pygame.error:
+        return None
 
 # Constants
 WIDTH, HEIGHT = 400, 600
@@ -53,6 +50,20 @@ BROWN = (139, 69, 19)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Flappy Koala")
 clock = pygame.time.Clock()
+
+# Load available assets
+for img_name in ['koala.png', 'pipe.png', 'background.png']:
+    if img := load_image(img_name):
+        IMAGES[img_name.split('.')[0]] = img
+
+for sound_name in ['flap.wav', 'score.wav', 'hit.wav']:
+    if snd := load_sound(sound_name):
+        SOUNDS[sound_name.split('.')[0]] = snd
+
+# Debug print available images
+print("\nAvailable images:")
+for name in IMAGES:
+    print(f"- {name}")
 
 # Koala class: represents our flying koala
 class Koala:
