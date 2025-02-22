@@ -1,4 +1,4 @@
-# Flappy Koala
+# Flappy Koala 🐨
 
 A simple Flappy Bird-style game implemented in Python using Pygame.
 
