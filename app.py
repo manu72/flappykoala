@@ -105,7 +105,7 @@ class Character:
             surface.blit(self.image, self.rect)
         else:
             # Fallback to circle with character-specific color
-            color = CHARACTER_COLORS.get(GAME_CHARACTER, BROWN)  # Default to brown if character not found
+            color = CHARACTER_COLORS.get(GAME_CHARACTER, BROWN)  # Default to brown
             pygame.draw.circle(surface, color, (int(self.x), int(self.y)), self.radius)
 
     def get_rect(self):
@@ -122,10 +122,10 @@ class Pipe:
         self.top_height = random.randint(50, HEIGHT - PIPE_GAP - 50)
         self.bottom_y = self.top_height + PIPE_GAP
         self.image = IMAGES.get('pipe')
-    
+
     def update(self):
         self.x -= PIPE_SPEED
-        
+
     def draw(self, surface):
         if self.image:
             # Draw top pipe (flipped)
@@ -169,11 +169,49 @@ def reset_game():
     score = 0
     return character, pipes, score
 
+def choose_character():
+    """Simple character selection screen"""
+    font = pygame.font.SysFont("Arial", 32)
+    title = font.render("Choose your character:", True, BLACK)
+    koala_text = font.render("Press K for Koala", True, BROWN)
+    pam_text = font.render("Press P for Pam", True, (255, 192, 203))
+
+    while True:
+        screen.fill(WHITE)
+
+        # Draw selection text
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//3))
+        screen.blit(koala_text, (WIDTH//2 - koala_text.get_width()//2, HEIGHT//2))
+        screen.blit(pam_text, (WIDTH//2 - pam_text.get_width()//2, HEIGHT//2 + 50))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_k:
+                    return "Koala"
+                if event.key == pygame.K_p:
+                    return "Pam"
+
 def main():
+    global GAME_CHARACTER, GAME_TITLE
+
+    # Character selection
+    GAME_CHARACTER = choose_character()
+    GAME_TITLE = (
+        "Flappy Koala 🐨 by Manu Codes" 
+        if GAME_CHARACTER == "Koala" 
+        else "Flappy Pam 🐦 by Manu Codes"
+    )
+    pygame.display.set_caption(GAME_TITLE)
+
     koala, pipes, score = reset_game()
     font = pygame.font.SysFont("Arial", 32)
     game_active = True
-    
+
     # Set up a timer event to spawn pipes periodically
     SPAWNPIPE = pygame.USEREVENT
     pygame.time.set_timer(SPAWNPIPE, PIPE_FREQUENCY)
@@ -181,7 +219,7 @@ def main():
     running = True
     while running:
         clock.tick(FPS)
-        
+
         # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
