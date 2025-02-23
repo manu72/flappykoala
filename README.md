@@ -59,8 +59,8 @@ pyinstaller flappy.spec --clean --noconfirm
 # Activate virtual environment
 source venv/bin/activate
 
-# Build executable
-pyinstaller flappy.spec --clean --noconfirm
+# Build executable for mac
+pyinstaller flappy.mac.spec --clean --noconfirm
 
 # App will be in dist/FlappyGame.app
 ```

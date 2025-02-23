@@ -7,7 +7,10 @@ pygame_data = collect_all('pygame')
 a = Analysis(
     ['app.py'],
     pathex=[],
-    datas=[('assets', 'assets')],  # Keep it simple
+    datas=[
+        ('assets', 'assets'),
+        ('assets/AppIcon.icns', '.'),  # Add icon to root of bundle
+    ],
     binaries=pygame_data[1],  # Pygame binaries
     hiddenimports=[
         'pygame.base',
@@ -35,6 +38,7 @@ exe = EXE(
     strip=False,
     upx=True,
     console=False,
+    icon='assets/AppIcon.icns',
 )
 
 coll = COLLECT(
@@ -47,15 +51,20 @@ coll = COLLECT(
     name='FlappyGame'
 )
 
-# Simplified bundle configuration
+# Bundle configuration with complete icon settings
 app = BUNDLE(
     coll,
     name='FlappyGame.app',
+    icon='assets/AppIcon.icns',
+    bundle_identifier='com.manucodes.flappygame',
     info_plist={
         'CFBundleName': 'FlappyGame',
         'CFBundleDisplayName': 'Flappy Game',
         'CFBundleExecutable': 'FlappyGame',
         'CFBundlePackageType': 'APPL',
         'CFBundleShortVersionString': '1.0.0',
+        'CFBundleIconFile': 'AppIcon.icns',
+        'LSMinimumSystemVersion': '10.13.0',
+        'NSHighResolutionCapable': True,
     }
 ) 
