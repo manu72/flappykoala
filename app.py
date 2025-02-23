@@ -9,39 +9,42 @@ pygame.mixer.init()  # Initialize sound
 
 # Asset loading
 ASSET_DIR = os.path.join(os.path.dirname(__file__), 'assets')
+IMAGES = {}
+SOUNDS = {}
+
 def load_image(name):
+    path = os.path.join(ASSET_DIR, 'images', name)
+    if not os.path.exists(path):
+        return None
     try:
-        return pygame.image.load(os.path.join(ASSET_DIR, 'images', name)).convert_alpha()
-    except (pygame.error, FileNotFoundError):
+        return pygame.image.load(path).convert_alpha()
+    except pygame.error:
         return None
 
 def load_sound(name):
+    path = os.path.join(ASSET_DIR, 'sounds', name)
+    if not os.path.exists(path):
+        return None
     try:
-        return pygame.mixer.Sound(os.path.join(ASSET_DIR, 'sounds', name))
-    except (pygame.error, FileNotFoundError):
+        return pygame.mixer.Sound(path)
+    except pygame.error:
         return None
 
-# Load assets (will be None if files don't exist)
-IMAGES = {
-    'koala': load_image('koala.png'),
-    'pipe': load_image('pipe.png'),
-    'background': load_image('background.png')
-}
-SOUNDS = {
-    'flap': load_sound('flap.wav'),
-    'score': load_sound('score.wav'),
-    'hit': load_sound('hit.wav')
-}
-
 # Constants
-WIDTH, HEIGHT = 400, 600
+WIDTH, HEIGHT = 600, 600
 FPS = 60
 GRAVITY = 0.5 # default is 0.5 this determines the height of a flap and fall speed
 FLAP_STRENGTH = -10 # default is -10 this combined with gravity determines the height of a flap
-PIPE_WIDTH = 60 # default is 60
+PIPE_WIDTH = 40 # default is 60
 PIPE_GAP = 200 # default is 150
 PIPE_SPEED = 3 # default is 3
 PIPE_FREQUENCY = 1500  # milliseconds between new pipes
+GAME_CHARACTER = "Pam"  # Options: "Koala", "Pam"
+GAME_TITLE = (
+    "Flappy Koala 🐨 by Manu Codes" 
+    if GAME_CHARACTER == "Koala" 
+    else "Flappy Pam 🐦 by Manu Codes"
+)
 
 # Colors
 WHITE = (255, 255, 255)
@@ -49,19 +52,40 @@ BLACK = (0, 0, 0)
 GREEN = (0, 200, 0)
 BROWN = (139, 69, 19)
 
+# Character-specific settings
+CHARACTER_COLORS = {
+    "Koala": BROWN,
+    "Pam": (255, 192, 203)  # Pink for Pam
+}
+
 # Set up display
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Flappy Koala")
+pygame.display.set_caption(GAME_TITLE)
 clock = pygame.time.Clock()
 
+# Load available assets
+for img_name in ['koala.png', 'pam.png', 'pipe.png', 'background.png']:
+    if img := load_image(img_name):
+        IMAGES[img_name.split('.')[0]] = img
+
+for sound_name in ['flap.wav', 'score.wav', 'hit.wav']:
+    if snd := load_sound(sound_name):
+        SOUNDS[sound_name.split('.')[0]] = snd
+
+# Debug print available images
+print("\nAvailable images:")
+for name in IMAGES:
+    print(f"- {name}")
+
 # Koala class: represents our flying koala
-class Koala:
+class Character:
     def __init__(self):
         self.x = 50
         self.y = HEIGHT // 2
         self.radius = 20
         self.velocity = 0
-        self.image = IMAGES.get('koala')
+        # Try to load character-specific image
+        self.image = IMAGES.get(GAME_CHARACTER.lower())
         if self.image:
             self.rect = self.image.get_rect(center=(self.x, self.y))
 
@@ -80,8 +104,9 @@ class Koala:
         if self.image:
             surface.blit(self.image, self.rect)
         else:
-            # Fallback to circle
-            pygame.draw.circle(surface, BROWN, (int(self.x), int(self.y)), self.radius)
+            # Fallback to circle with character-specific color
+            color = CHARACTER_COLORS.get(GAME_CHARACTER, BROWN)  # Default to brown
+            pygame.draw.circle(surface, color, (int(self.x), int(self.y)), self.radius)
 
     def get_rect(self):
         if self.image:
@@ -97,10 +122,10 @@ class Pipe:
         self.top_height = random.randint(50, HEIGHT - PIPE_GAP - 50)
         self.bottom_y = self.top_height + PIPE_GAP
         self.image = IMAGES.get('pipe')
-    
+
     def update(self):
         self.x -= PIPE_SPEED
-        
+
     def draw(self, surface):
         if self.image:
             # Draw top pipe (flipped)
@@ -137,21 +162,64 @@ def check_collision(koala, pipes):
             return True
     return False
 
-# Main game loop
-def main():
-    score = 0
-    font = pygame.font.SysFont("Arial", 32)
-    koala = Koala()
+def reset_game():
+    """Reset game state for a new game"""
+    character = Character()
     pipes = []
-    
-    # Set up a timer event to spawn pipes periodically.
+    score = 0
+    return character, pipes, score
+
+def choose_character():
+    """Simple character selection screen"""
+    font = pygame.font.SysFont("Arial", 32)
+    title = font.render("Choose your character:", True, BLACK)
+    koala_text = font.render("Press K for Koala", True, BROWN)
+    pam_text = font.render("Press P for Pam", True, (255, 192, 203))
+
+    while True:
+        screen.fill(WHITE)
+
+        # Draw selection text
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//3))
+        screen.blit(koala_text, (WIDTH//2 - koala_text.get_width()//2, HEIGHT//2))
+        screen.blit(pam_text, (WIDTH//2 - pam_text.get_width()//2, HEIGHT//2 + 50))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_k:
+                    return "Koala"
+                if event.key == pygame.K_p:
+                    return "Pam"
+
+def main():
+    global GAME_CHARACTER, GAME_TITLE
+
+    # Character selection
+    GAME_CHARACTER = choose_character()
+    GAME_TITLE = (
+        "Flappy Koala 🐨 by Manu Codes" 
+        if GAME_CHARACTER == "Koala" 
+        else "Flappy Pam 🐦 by Manu Codes"
+    )
+    pygame.display.set_caption(GAME_TITLE)
+
+    koala, pipes, score = reset_game()
+    font = pygame.font.SysFont("Arial", 32)
+    game_active = True
+
+    # Set up a timer event to spawn pipes periodically
     SPAWNPIPE = pygame.USEREVENT
     pygame.time.set_timer(SPAWNPIPE, PIPE_FREQUENCY)
 
     running = True
     while running:
         clock.tick(FPS)
-        
+
         # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -159,27 +227,37 @@ def main():
                 break
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    koala.flap()
-            if event.type == SPAWNPIPE:
+                    if game_active:
+                        koala.flap()
+                    else:
+                        # Reset game on spacebar when game is over
+                        koala, pipes, score = reset_game()
+                        game_active = True
+            if event.type == SPAWNPIPE and game_active:
                 pipes.append(Pipe())
 
-        # Update game objects
-        koala.update()
-        for pipe in pipes:
-            pipe.update()
+        if game_active:
+            # Update game objects
+            koala.update()
+            for pipe in pipes:
+                pipe.update()
 
-        # Increase score when the koala passes a pipe (only once per pipe)
-        for pipe in pipes:
-            if pipe.x + pipe.width < koala.x and not hasattr(pipe, 'scored'):
-                score += 1
-                pipe.scored = True  # mark as scored
+            # Increase score when koala passes a pipe
+            for pipe in pipes:
+                if pipe.x + pipe.width < koala.x and not hasattr(pipe, 'scored'):
+                    score += 1
+                    pipe.scored = True
+                    if SOUNDS.get('score'):
+                        SOUNDS['score'].play()
 
-        # Remove pipes that have moved off the screen
-        pipes = [pipe for pipe in pipes if not pipe.off_screen()]
+            # Remove off-screen pipes
+            pipes = [pipe for pipe in pipes if not pipe.off_screen()]
 
-        # Check for collisions
-        if check_collision(koala, pipes):
-            running = False
+            # Check for collisions
+            if check_collision(koala, pipes):
+                game_active = False
+                if SOUNDS.get('hit'):
+                    SOUNDS['hit'].play()
 
         # Draw everything
         screen.fill(WHITE)
@@ -191,14 +269,14 @@ def main():
         score_text = font.render(f"Score: {score}", True, BLACK)
         screen.blit(score_text, (10, 10))
 
+        # Draw game over message
+        if not game_active:
+            game_over_text = font.render("Game Over! Press SPACE to restart", True, BLACK)
+            text_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+            screen.blit(game_over_text, text_rect)
+
         pygame.display.flip()
 
-    # Game Over: display a message before closing
-    game_over_text = font.render("Game Over!", True, BLACK)
-    screen.blit(game_over_text, ((WIDTH - game_over_text.get_width()) // 2,
-                                 (HEIGHT - game_over_text.get_height()) // 2))
-    pygame.display.flip()
-    pygame.time.wait(2000)
     pygame.quit()
     sys.exit()
 
