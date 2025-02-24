@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
+import os
 
 # Collect all pygame resources and dependencies
 pygame_data = collect_all('pygame')
@@ -46,5 +47,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='assets/AppIcon.ico'
+    icon=os.path.join('assets', 'AppIcon.ico')
 ) 
